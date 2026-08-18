@@ -1,6 +1,5 @@
 package com.eventostec.api.domain.address;
 
-import java.util.Date;
 import java.util.UUID;
 
 import com.eventostec.api.domain.event.Event;
