@@ -1,6 +1,7 @@
 package com.eventostec.api.service;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,13 @@ public class CouponService {
 		this.couponRepository.save(newCoupon);
 		
 		return newCoupon;
+	}
+
+
+
+
+	public List<Coupon> consultCoupons(UUID eventId, Date date) {
+		return this.couponRepository.findByEventIdAndValidAfter(eventId, date);
 	}
 
 }
