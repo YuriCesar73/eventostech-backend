@@ -1,5 +1,6 @@
 package com.eventostec.api.service;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +26,9 @@ public class EventService {
 	@Autowired
 	private EventRepository eventRepository;
 
+	@Autowired
+	private AddressService addressService;
+
 	public Event createEvent(EventRequestDTO data) {
 		String imgUrl = null;
 
@@ -43,12 +47,16 @@ public class EventService {
 
 		this.eventRepository.save(newEvent);
 
+		if(!data.remote()) {
+			this.addressService.createAddress(data, newEvent);
+		}
+
 		return newEvent;
 	}
 
 	public List<EventResponseDTO> getUpcomingEvents(int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
-		
+
 		Page<Event> eventsPage = this.eventRepository.findUpcomingEvents(new Date(), pageable);
 
 		return eventsPage.map(event -> new EventResponseDTO(
@@ -56,14 +64,15 @@ public class EventService {
 				event.getTitle(), 
 				event.getDescription(), 
 				event.getDate(),
-				"",
-				"", 
+				event.getAddress() != null ? event.getAddress().getCity() : "",
+				event.getAddress() != null ? event.getAddress().getUf() : "",
 				event.getRemote(),
 				event.getEventUrl(),
 				event.getImgUrl()))
 				.stream().toList();
 
 	}
+
 
 	private String uploadImg(MultipartFile multipartFile) {
 		String imgName = UUID.randomUUID() + "-" + multipartFile.getName();
@@ -75,6 +84,41 @@ public class EventService {
 			System.out.println("Erro ao subir arquivo");
 			return null;
 		}
+	}
+	
+	private Date getTenYearsFromNow() {
+	    Calendar calendar = Calendar.getInstance();
+	    calendar.add(Calendar.YEAR, 10);
+	    return calendar.getTime();
+	}
+
+
+	public List<EventResponseDTO> getFilteredEvents(int page, int size, String title, String city, String uf,
+			Date startDate, Date endDate) {
+		
+		title = (title != null) ? title : "";
+		city = (city != null) ? city : "";
+		uf = (uf != null) ? uf : "";
+		startDate = (startDate != null) ? startDate : new Date();
+		endDate = (endDate != null) ? endDate : getTenYearsFromNow();
+		
+		Pageable pageable = PageRequest.of(page, size);
+
+		Page<Event> eventsPage = this.eventRepository.findFilteredEvents(title, city, uf, startDate, endDate, pageable);
+
+
+		return eventsPage.map(event -> new EventResponseDTO(
+				event.getId(), 
+				event.getTitle(), 
+				event.getDescription(), 
+				event.getDate(),
+				event.getAddress() != null ? event.getAddress().getCity() : "",
+				event.getAddress() != null ? event.getAddress().getUf() : "",
+				event.getRemote(),
+				event.getEventUrl(),
+				event.getImgUrl()))
+				.stream().toList();
+
 	}
 
 
